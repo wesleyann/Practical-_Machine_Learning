@@ -1,0 +1,122 @@
+---
+title: "Practical Machine Learning Project"
+author: "EAA"
+output: html_document
+date: '2022-05-30'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview of the data set and methodology
+
+ 
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website [here:](http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har)) (see the section on the Weight Lifting Exercise Dataset)
+
+
+## Load Required Packages
+```{r load packages, message = FALSE}
+library(knitr)
+library(tidyverse)
+library(caret)
+library(randomForest)
+library(rpart)
+```
+
+## Loading and Processing Data
+
+
+The training data for this project can be found [here](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv).
+
+The test data is available [here.](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv)
+
+```{r process}
+  
+train_set <- read_csv("pml-training.csv", na = c("", "#DIV/0!", "NA"), show_col_types = FALSE)
+test_set <- read_csv("pml-testing.csv", na = c("", "#DIV/0!", "NA"), show_col_types = FALSE)
+
+```
+##  Cleaning and Tidying Data
+```{r clean}
+ 
+## Data cleaning
+# Delete entire columns with only NAs
+
+#train_set <- train_set[colSums(!is.na(train_set)) > 0 ]
+
+
+## Delete entire columns with only NAs
+
+train_set <- train_set[, colSums(is.na(train_set)) == 0]
+test_set <- test_set[, colSums(is.na(test_set)) == 0]
+
+## Delete irrelevant columns (or variables) not used for prediction
+
+
+train_set <- select(train_set, -c(1:7))
+
+```
+
+# Cross-Validation
+```{r, cross}
+
+## Split the train_set into two: trainData and testData
+
+inTrain <- createDataPartition(y = train_set$classe, list = FALSE, p = 0.7)
+train_data <- train_set[inTrain, ]
+test_data <- train_set[-inTrain, ]
+
+```
+
+# Prediction
+
+```{r, model}
+
+# Building Decision Tree Model
+
+#Decision Tree
+
+# Fit model on train_data
+
+dtree_modfit <- rpart(classe ~., data = train_data, method = "class")
+
+# use model to predict classe in validation set (test_data)
+
+dtree_prediction <- predict(dtree_modfit, test_data, type = "class")
+
+## get error estimates via confusion matrix
+
+ 
+confusionMatrix(dtree_prediction, as.factor(test_data$classe))
+
+
+# Random Forest
+
+# fit model to train_data
+
+rf_modfit <- randomForest(as.factor(classe) ~., data = train_data)
+
+# use model on test_data
+
+rf_prediction <-  predict(rf_modfit, test_data, type = "class")
+
+# estimate error via confusion matrix
+
+confusionMatrix(rf_prediction, as.factor(test_data$classe))
+
+
+```
+
+```{r, quiz}
+
+## test the model to predict 20 different test cases
+
+predict_sub <- predict(rf_modfit, test_set, type = "class")
+#predict_sub  ## hidden on purpose
+
+
+```
+
+ 
